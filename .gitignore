@@ -1,0 +1,6 @@
+.python-version
+.env
+.DS_Store
+.env.yaml
+lwhf.egg-info/*
+*.ipynb_checkpoints/*
