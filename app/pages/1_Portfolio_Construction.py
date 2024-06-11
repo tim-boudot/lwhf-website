@@ -36,15 +36,20 @@ if st.button("Let's create that portfolio!", key=None, help=None, on_click=None,
     my_bar = st.progress(0, text=progress_text)
 
 
-    # url=('https://lwhf-edxf3vliba-ew.a.run.app/predict')
+    url=('https://lwhf-edxf3vliba-ew.a.run.app/predict')
 
-    # params = {
-    #     'as_of_date':'2024-05-27',
-    #     'n_periods':3
-    # }
+    params = {
+        'as_of_date':'2024-05-27',
+        'n_periods':3
+    }
 
-    # req = requests.get(url, params)
-    # res = req.json()
+    req = requests.get(url, params)
+    res = req.json()
+    weights = res['latest_portfolio']['weight']
+    weights = {k:v for k,v in weights.items() if v!=0}
+
+    dicto_3 = {'Stocks':weights.keys(), 'Values':weights.values()}
+    fig = px.pie(dicto_3, values='Values', names='Stocks')
 
     for percent_complete in range(100):
         time.sleep(0.01)
