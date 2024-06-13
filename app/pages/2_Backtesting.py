@@ -17,8 +17,8 @@ st.markdown('''# Backtesting of portfolio performance''')
 
 #predit_url = ('https://lwhf-edxf3vliba-ew.a.run.app/predict')
 #backtest_url = ('https://lwhf4-edxf3vliba-ew.a.run.app/backtest')
-api_url = ('http://lwhf5-edxf3vliba-ew.a.run.app')
-
+#api_url = ('http://lwhf5-edxf3vliba-ew.a.run.app')
+api_url = ('https://lwhf6-edxf3vliba-ew.a.run.app')
 
 # Date Selector
 default_date = datetime.datetime.strptime('2024-05-27', "%Y-%m-%d").date()
