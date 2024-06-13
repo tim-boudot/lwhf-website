@@ -4,8 +4,11 @@ import requests, time, datetime
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import os, json
 
 import matplotlib.pyplot as plt
+
+api_cache_folder = 'api_cache'
 
 def get_total_return(weekly_returns):
     total_return = 1
@@ -32,14 +35,31 @@ num_periods = st.number_input("Please select the number of backtesting periods",
 st.write("You selected:", num_periods)
 
 if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
+
+    end_point = 'backtest'
     params = {
         'as_of_date':as_of_date_str,
         'n_periods':num_periods
     }
-    end_point = 'backtest'
-    url = '/'.join([api_url, end_point])
-    req = requests.get(url, params)
-    result = req.json()
+
+
+    full_path = os.path.join(api_cache_folder, end_point)
+    if not os.path.exists(full_path):
+        os.makedirs(full_path)
+    filename = f'{as_of_date_str}-{num_periods}.json'
+    json_full_path = os.path.join(full_path, filename)
+    if os.path.exists(json_full_path):
+        print(f'✅ Found {filename} in the local cache.')
+        # read the json file as a dictionary
+        with open(json_full_path, 'r') as file:
+            result = json.load(file)
+    else:
+        url = '/'.join([api_url, end_point])
+        req = requests.get(url, params)
+        result = req.json()
+    with open(json_full_path, 'w') as f:
+        json.dump(result, f)
+
     st.session_state['result'] = result
 
 
