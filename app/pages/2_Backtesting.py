@@ -20,6 +20,7 @@ st.markdown('''# Backtesting of portfolio performance''')
 #api_url = ('http://lwhf5-edxf3vliba-ew.a.run.app')
 api_url = ('https://lwhf6-edxf3vliba-ew.a.run.app')
 
+
 # Date Selector
 default_date = datetime.datetime.strptime('2024-05-27', "%Y-%m-%d").date()
 selected_date = st.date_input("Please select the end of the backtesting period", default_date)
@@ -89,11 +90,12 @@ if st.button("See Final Weights", key=None, help=None, on_click=None, args=None,
     top_5_weights = dict(list(sorted_weights.items())[:5])
     other_weight = sum(list(sorted_weights.values())[5:])
     top_5_weights['Other'] = other_weight
-    my_dict = {'Stocks': top_5_weights.keys(), 'Values': top_5_weights.values()}
+    my_dict = {'Stocks': weights.keys(), 'Values': weights.values()}
+    #my_dict = {'Stocks': top_5_weights.keys(), 'Values': top_5_weights.values()}
     fig = px.pie(my_dict, values='Values', names='Stocks', title='Portfolio Weights')
     st.plotly_chart(fig, use_container_width=True)
 
-    st.session_state['top_5_weights'] = top_5_weights
+    st.session_state['top_5_weights'] = weights
 
 
 # Function to handle button click
