@@ -4,6 +4,9 @@ import pandas as pd
 import time
 import requests
 
+backtest_url = ('https://lwhf3-edxf3vliba-ew.a.run.app/backtest')
+predit_url = ('https://lwhf-edxf3vliba-ew.a.run.app/predict')
+
 st.markdown('''# Let's construct a money-making guaranteed 100% becoming rich in 1 week portfolio''')
 
 options = st.multiselect(
@@ -36,16 +39,14 @@ if st.button("Let's create that portfolio!", key=None, help=None, on_click=None,
     my_bar = st.progress(0, text=progress_text)
 
 
-    url=('https://lwhf-edxf3vliba-ew.a.run.app/predict')
-
     params = {
         'as_of_date':'2024-05-27',
         'n_periods':3
     }
 
-    req = requests.get(url, params)
+    req = requests.get(backtest_url, params)
     res = req.json()
-    weights = res['latest_portfolio']['weight']
+    weights = res['weight']
     weights = {k:v for k,v in weights.items() if v!=0}
 
     dicto_3 = {'Stocks':weights.keys(), 'Values':weights.values()}
@@ -54,6 +55,7 @@ if st.button("Let's create that portfolio!", key=None, help=None, on_click=None,
     for percent_complete in range(100):
         time.sleep(0.01)
         my_bar.progress(percent_complete + 1, text=progress_text)
+
     time.sleep(1)
     my_bar.empty()
     st.plotly_chart(fig, use_container_width=True)
