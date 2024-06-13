@@ -3,9 +3,10 @@ import plotly.express as px
 import pandas as pd
 import time
 import requests
+import stqdm
 
-backtest_url = ('https://lwhf3-edxf3vliba-ew.a.run.app/backtest')
-predit_url = ('https://lwhf-edxf3vliba-ew.a.run.app/predict')
+#predit_url = ('https://lwhf-edxf3vliba-ew.a.run.app/predict')
+backtest_url = ('https://lwhf4-edxf3vliba-ew.a.run.app/backtest')
 
 st.markdown('''# Let's construct a money-making guaranteed 100% becoming rich in 1 week portfolio''')
 
@@ -38,7 +39,6 @@ if st.button("Let's create that portfolio!", key=None, help=None, on_click=None,
     progress_text = "Operation in progress. Please wait."
     my_bar = st.progress(0, text=progress_text)
 
-
     params = {
         'as_of_date':'2024-05-27',
         'n_periods':3
@@ -46,7 +46,7 @@ if st.button("Let's create that portfolio!", key=None, help=None, on_click=None,
 
     req = requests.get(backtest_url, params)
     res = req.json()
-    weights = res['weight']
+    weights = res['final_weights']
     weights = {k:v for k,v in weights.items() if v!=0}
 
     dicto_3 = {'Stocks':weights.keys(), 'Values':weights.values()}
