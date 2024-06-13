@@ -2,3 +2,7 @@ streamlit
 plotly
 pandas
 requests
+pybind11
+cvxpy
+riskfolio-lib
+matplotlib==3.7.0
