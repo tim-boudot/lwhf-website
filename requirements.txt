@@ -6,3 +6,4 @@ pybind11
 cvxpy
 riskfolio-lib
 matplotlib==3.7.0
+stqdm
