@@ -85,13 +85,16 @@ if st.button("See Final Weights", key=None, help=None, on_click=None, args=None,
     # Plot weights
     result = st.session_state['result']
     weights = result['final_weights']
-    weights = {k:v for k,v in weights.items() if abs(v) > 1e-10}
-    sorted_weights = dict(sorted(weights.items(), key=lambda item: abs(item[1]), reverse=True))
-    top_5_weights = dict(list(sorted_weights.items())[:5])
-    other_weight = sum(list(sorted_weights.values())[5:])
-    top_5_weights['Other'] = other_weight
-    my_dict = {'Stocks': weights.keys(), 'Values': weights.values()}
-    #my_dict = {'Stocks': top_5_weights.keys(), 'Values': top_5_weights.values()}
+    weights = {k:v for k,v in weights.items() if abs(v) > 1e-7}
+    if len(weights) > 5:
+        sorted_weights = dict(sorted(weights.items(), key=lambda item: abs(item[1]), reverse=True))
+        top_5_weights = dict(list(sorted_weights.items())[:5])
+        other_weight = sum(list(sorted_weights.values())[5:])
+        top_5_weights['Other'] = other_weight
+    else:
+        top_5_weights = weights
+    #my_dict = {'Stocks': weights.keys(), 'Values': weights.values()}
+    my_dict = {'Stocks': top_5_weights.keys(), 'Values': top_5_weights.values()}
     fig = px.pie(my_dict, values='Values', names='Stocks', title='Portfolio Weights')
     st.plotly_chart(fig, use_container_width=True)
 
