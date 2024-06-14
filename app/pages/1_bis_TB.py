@@ -1,29 +1,78 @@
 import streamlit as st
-from PIL import Image
+import plotly.express as px
+import pandas as pd
+import time
+import requests
+import stqdm
 
-st.set_page_config(page_title="Welcome")
+#predit_url = ('https://lwhf-edxf3vliba-ew.a.run.app/predict')
+current_url = ('https://lwhf7-edxf3vliba-ew.a.run.app/current_portfolio')
 
+st.markdown('''# Let's construct a money-making guaranteed 100% becoming rich in 1 week portfolio''')
 
-page_bg_img = '''
-<style>
-. stApp {
-background-image: url("https://images.unsplash.com/photo-1542281286-9e0a16bb7366");
-background-size: cover;
-}
-</style>
-'''
+options = st.multiselect(
+    "Which asset classes would you like to include in your portfolio",
+    ["Equities", "Bonds", "Real Estate", "Bitcoin"],
+    ["Equities", "Bonds", "Real Estate", "Bitcoin"])
 
-st.markdown(page_bg_img, unsafe_allow_html=True)
-
-
-st.markdown('''# Le Wagon Hedge Fund''')
-
-image = Image.open('images/LWHF.jpeg')
-st.image(image, caption='Sunrise by the mountains')
+st.write(" ")
+st.write(" ")
 
 
+if st.button("Let's create that portfolio!", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
 
 
+    with st.status("Building Portfolio...", expanded=True) as status:
+        st.write("Downloading data...")
+        time.sleep(5)
+        st.write("Running model...")
+
+        params = {
+            'as_of_date':'2024-05-27'
+        }
+
+        req = requests.get(current_url, params)
+        res = req.json()
+        exp_ret = res[0]
+        exp_var = res[1]
+        weights = res[2]['weights']
+        weights = {k:v for k,v in weights.items() if v!=0}
+
+        dicto_3 = {'Stocks':weights.keys(), 'Values':weights.values()}
+        fig = px.pie(dicto_3, values='Values', names='Stocks')
+
+        st.write("Optimizing portfolio...")
+        time.sleep(5)
+        status.update(label='Portfolio ready!', state='complete', expanded=False)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader('Expected Return:')
+        st.write(f'{round(exp_ret*100,2)}%')
+
+    with col2:
+        st.subheader('Expected Variance:')
+        st.write(f'{round(exp_var*100,2)}%')
+
+    st.write(" ")
+    st.write(" ")
+    st.plotly_chart(fig, use_container_width=True)
+
+
+
+
+
+
+    # progress_text = "Operation in progress. Please wait."
+    # my_bar = st.progress(0, text=progress_text)
+
+
+    # for percent_complete in range(100):
+    #     time.sleep(0.01)
+    #     my_bar.progress(percent_complete + 1, text=progress_text)
+
+    # time.sleep(1)
+    # my_bar.empty()
 
 def rain(
     emoji: str,
@@ -228,7 +277,7 @@ def rain(
         unsafe_allow_html=True,
     )
 
-rain(emoji='🤑',
-     font_size=40,
-    falling_speed=5,
+rain(emoji='💷',
+     font_size=20,
+    falling_speed=50,
     animation_length="infinite")
