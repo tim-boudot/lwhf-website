@@ -11,13 +11,14 @@ import matplotlib.pyplot as plt
 
 MAX_WEIGHTS_TO_DISPLAY = 10
 WEIGHT_TOLERANCE = 1e-7
-api_cache_folder = 'api_cache'
+api_cache_folder = 'api_cache_7'
 DEFAULT_NUM_PERIODS = 15
 
 #predit_url = ('https://lwhf-edxf3vliba-ew.a.run.app/predict')
 #backtest_url = ('https://lwhf4-edxf3vliba-ew.a.run.app/backtest')
 #api_url = ('http://lwhf5-edxf3vliba-ew.a.run.app')
-api_url = ('https://lwhf6-edxf3vliba-ew.a.run.app')
+#api_url = ('https://lwhf6-edxf3vliba-ew.a.run.app')
+api_url = ('https://lwhf7-edxf3vliba-ew.a.run.app')
 
 def get_total_return(weekly_returns):
     total_return = 1
@@ -140,74 +141,34 @@ if st.button("See Final Weights", key=None, help=None, on_click=None, args=None,
     top_n_aggregate_weights = get_top_n_weights(aggregate_weights)
     st.session_state['top_n_weights'] = top_n_aggregate_weights
 
-
-    # Create a figure with subplots for aggregate weights and weekly weights
-    num_weeks = len(weekly_weights)
-    fig = sp.make_subplots(
-        rows=num_weeks + 1,  # One extra row for the aggregate weights
-        cols=1,
-        subplot_titles=['Aggregate Weights'] + [f'Week {i+1}' for i in range(num_weeks)],
-        specs=[[{'type': 'domain'}]] * (num_weeks + 1)
-    )
-
     # Plot aggregate weights
     my_dict_agg = {'Stocks': list(top_n_aggregate_weights.keys()), 'Values': list(top_n_aggregate_weights.values())}
-    fig.add_trace(go.Pie(labels=my_dict_agg['Stocks'], values=my_dict_agg['Values']), row=1, col=1)
+    fig_agg = go.Figure(data=[go.Pie(labels=my_dict_agg['Stocks'], values=my_dict_agg['Values'], showlegend=True)])
+    fig_agg.update_layout(title_text="Aggregate Portfolio Weights", height=600)
+    st.plotly_chart(fig_agg, use_container_width=True)
+
+    # Create a figure with subplots for weekly weights
+    num_weeks = len(weekly_weights)
+    num_cols = 3
+    num_rows = (num_weeks + num_cols - 1) // num_cols  # Calculate the number of rows needed
+    fig = sp.make_subplots(
+        rows=num_rows,
+        cols=num_cols,
+        subplot_titles=[f'Week {i+1}' for i in range(num_weeks)],
+        specs=[[{'type': 'domain'}] * num_cols for _ in range(num_rows)]
+    )
 
     # Iterate over weekly weights and plot each week's weights
     for i, weights in enumerate(weekly_weights):
         top_n_weights = get_top_n_weights(weights)
         my_dict = {'Stocks': list(top_n_weights.keys()), 'Values': list(top_n_weights.values())}
-        fig.add_trace(go.Pie(labels=my_dict['Stocks'], values=my_dict['Values']), row=i + 2, col=1)  # Shift by 1 for aggregate weights
+        row = (i // num_cols) + 1
+        col = (i % num_cols) + 1
+        fig.add_trace(go.Pie(labels=my_dict['Stocks'], values=my_dict['Values'], showlegend=True), row=row, col=col)
 
     # Update layout
-    fig.update_layout(title_text="Aggregate and Weekly Portfolio Weights", height=300 * (num_weeks + 1))
+    fig.update_layout(title_text="Weekly Portfolio Weights", height=300 * num_rows)
     st.plotly_chart(fig, use_container_width=True)
-
-    # ## Plot weekly weights
-    # # Create a figure with subplots
-    # num_weeks = len(weekly_weights)
-    # fig = sp.make_subplots(
-    #     rows=num_weeks,
-    #     cols=1,
-    #     subplot_titles=[f'Week {i+1}' for i in range(num_weeks)],
-    #     specs=[[{'type': 'domain'}] for _ in range(num_weeks)]
-    # )
-
-    # # Iterate over weekly weights and plot each week's weights
-    # for i, weights in enumerate(weekly_weights):
-    #     top_n_weights = get_top_n_weights(weights)
-    #     my_dict = {'Stocks': list(top_n_weights.keys()), 'Values': list(top_n_weights.values())}
-    #     fig.add_trace(go.Pie(labels=my_dict['Stocks'], values=my_dict['Values']), row=i+1, col=1)
-
-    # # Update layout
-    # fig.update_layout(title_text="Weekly Portfolio Weights", height=300*num_weeks)
-    # st.plotly_chart(fig, use_container_width=True)
-
-
-
-
-
-
-
-
-    # # Plot weights
-    # result = st.session_state['result']
-    # weights = result['final_weights']
-    # weights = {k:v for k,v in weights.items() if abs(v) > WEIGHT_TOLERANCE}
-    # if len(weights) > MAX_WEIGHTS_TO_DISPLAY:
-    #     sorted_weights = dict(sorted(weights.items(), key=lambda item: abs(item[1]), reverse=True))
-    #     top_5_weights = dict(list(sorted_weights.items())[:MAX_WEIGHTS_TO_DISPLAY])
-    #     other_weight = sum(list(sorted_weights.values())[MAX_WEIGHTS_TO_DISPLAY:])
-    #     top_5_weights['Other'] = other_weight
-    # else:
-    #     top_5_weights = weights
-    # #my_dict = {'Stocks': weights.keys(), 'Values': weights.values()}
-    # my_dict = {'Stocks': top_5_weights.keys(), 'Values': top_5_weights.values()}
-    # fig = px.pie(my_dict, values='Values', names='Stocks', title='Portfolio Weights')
-    # st.plotly_chart(fig, use_container_width=True)
-
-    # st.session_state['top_5_weights'] = weights
 
 
 # Function to handle button click
