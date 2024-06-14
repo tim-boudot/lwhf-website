@@ -89,7 +89,7 @@ if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=No
         st.info("Pre-trained model found. Model predicting...")
         progress_bar = st.progress(0)
         for percent_complete in range(100):
-            time.sleep(0.01)  # Adjust the sleep time to make the progress bar fill up in 3 seconds
+            time.sleep(0.001)  # Adjust the sleep time to make the progress bar fill up in 3 seconds
             progress_bar.progress(percent_complete + 1)
 
         # read the json file as a dictionary
