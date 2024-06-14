@@ -4,11 +4,20 @@ import requests, time, datetime
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.subplots as sp
 import os, json
 
 import matplotlib.pyplot as plt
 
+MAX_WEIGHTS_TO_DISPLAY = 10
+WEIGHT_TOLERANCE = 1e-7
 api_cache_folder = 'api_cache'
+DEFAULT_NUM_PERIODS = 15
+
+#predit_url = ('https://lwhf-edxf3vliba-ew.a.run.app/predict')
+#backtest_url = ('https://lwhf4-edxf3vliba-ew.a.run.app/backtest')
+#api_url = ('http://lwhf5-edxf3vliba-ew.a.run.app')
+api_url = ('https://lwhf6-edxf3vliba-ew.a.run.app')
 
 def get_total_return(weekly_returns):
     total_return = 1
@@ -16,13 +25,40 @@ def get_total_return(weekly_returns):
         total_return *= (1 + weekly_return)
     return total_return - 1
 
+
+def get_top_n_weights(weights, n=MAX_WEIGHTS_TO_DISPLAY, tolerance=WEIGHT_TOLERANCE):
+    filtered_weights = {k: v for k, v in weights.items() if abs(v) > WEIGHT_TOLERANCE}
+
+    if len(filtered_weights) > n:
+        sorted_weights = dict(sorted(filtered_weights.items(), key=lambda item: abs(item[1]), reverse=True))
+        top_n_weights = dict(list(sorted_weights.items())[:n])
+        other_weight = sum(list(sorted_weights.values())[n:])
+        top_n_weights['Other'] = other_weight
+    else:
+        top_n_weights = filtered_weights
+
+    return top_n_weights
+
+def get_aggregate_weights(weekly_weights):
+    num_weeks = len(weekly_weights)
+    adjusted_weekly_weights = []
+    for week_weights in weekly_weights:
+        adjusted_week = {k:v/num_weeks for k,v in week_weights.items()}
+        adjusted_weekly_weights.append(adjusted_week)
+
+    aggregate_weights = {}
+    for week_weights in adjusted_weekly_weights:
+        for k,v in week_weights.items():
+            if k in aggregate_weights:
+                aggregate_weights[k] += v
+            else:
+                aggregate_weights[k] = v
+
+    return aggregate_weights
+
+
+
 st.markdown('''# Backtesting of portfolio performance''')
-
-#predit_url = ('https://lwhf-edxf3vliba-ew.a.run.app/predict')
-#backtest_url = ('https://lwhf4-edxf3vliba-ew.a.run.app/backtest')
-#api_url = ('http://lwhf5-edxf3vliba-ew.a.run.app')
-api_url = ('https://lwhf6-edxf3vliba-ew.a.run.app')
-
 
 # Date Selector
 default_date = datetime.datetime.strptime('2024-05-27', "%Y-%m-%d").date()
@@ -31,7 +67,7 @@ as_of_date_str = selected_date.strftime("%Y-%m-%d")
 st.write("You selected:", selected_date)
 
 # Number of Periods Selector
-num_periods = st.number_input("Please select the number of backtesting periods", min_value=0, max_value=100, value=3, step=1)
+num_periods = st.number_input("Please select the number of backtesting periods", min_value=0, max_value=100, value=DEFAULT_NUM_PERIODS, step=1)
 st.write("You selected:", num_periods)
 
 if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
@@ -82,14 +118,7 @@ if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=No
     df = pd.DataFrame({'Date':dates, 'Portfolio Returns':cumulative_portfolio_returns, 'Market Returns':cumulative_market_returns})
     df = df.set_index('Date')
 
-    # Plotting
-    # fig, ax = plt.subplots()
-    # df.plot(ax=ax)
-    # plt.xlabel('Date')
-    # plt.ylabel('Returns')
-    # plt.title('Portfolio vs Market Returns')
-    # st.pyplot(fig)
-        # Plotting using Plotly
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=dates, y=cumulative_portfolio_returns, mode='lines', name='Portfolio Returns'))
     fig.add_trace(go.Scatter(x=dates, y=cumulative_market_returns, mode='lines', name='Market Returns'))
@@ -102,23 +131,83 @@ if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=No
 
 
 if st.button("See Final Weights", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
-    # Plot weights
+    # Retrieve weekly weights
     result = st.session_state['result']
-    weights = result['final_weights']
-    weights = {k:v for k,v in weights.items() if abs(v) > 1e-7}
-    if len(weights) > 5:
-        sorted_weights = dict(sorted(weights.items(), key=lambda item: abs(item[1]), reverse=True))
-        top_5_weights = dict(list(sorted_weights.items())[:5])
-        other_weight = sum(list(sorted_weights.values())[5:])
-        top_5_weights['Other'] = other_weight
-    else:
-        top_5_weights = weights
-    #my_dict = {'Stocks': weights.keys(), 'Values': weights.values()}
-    my_dict = {'Stocks': top_5_weights.keys(), 'Values': top_5_weights.values()}
-    fig = px.pie(my_dict, values='Values', names='Stocks', title='Portfolio Weights')
+    weekly_weights = result['weekly_weights']
+
+    ## Aggregate weights
+    aggregate_weights = get_aggregate_weights(weekly_weights)
+    top_n_aggregate_weights = get_top_n_weights(aggregate_weights)
+    st.session_state['top_n_weights'] = top_n_aggregate_weights
+
+
+    # Create a figure with subplots for aggregate weights and weekly weights
+    num_weeks = len(weekly_weights)
+    fig = sp.make_subplots(
+        rows=num_weeks + 1,  # One extra row for the aggregate weights
+        cols=1,
+        subplot_titles=['Aggregate Weights'] + [f'Week {i+1}' for i in range(num_weeks)],
+        specs=[[{'type': 'domain'}]] * (num_weeks + 1)
+    )
+
+    # Plot aggregate weights
+    my_dict_agg = {'Stocks': list(top_n_aggregate_weights.keys()), 'Values': list(top_n_aggregate_weights.values())}
+    fig.add_trace(go.Pie(labels=my_dict_agg['Stocks'], values=my_dict_agg['Values']), row=1, col=1)
+
+    # Iterate over weekly weights and plot each week's weights
+    for i, weights in enumerate(weekly_weights):
+        top_n_weights = get_top_n_weights(weights)
+        my_dict = {'Stocks': list(top_n_weights.keys()), 'Values': list(top_n_weights.values())}
+        fig.add_trace(go.Pie(labels=my_dict['Stocks'], values=my_dict['Values']), row=i + 2, col=1)  # Shift by 1 for aggregate weights
+
+    # Update layout
+    fig.update_layout(title_text="Aggregate and Weekly Portfolio Weights", height=300 * (num_weeks + 1))
     st.plotly_chart(fig, use_container_width=True)
 
-    st.session_state['top_5_weights'] = weights
+    # ## Plot weekly weights
+    # # Create a figure with subplots
+    # num_weeks = len(weekly_weights)
+    # fig = sp.make_subplots(
+    #     rows=num_weeks,
+    #     cols=1,
+    #     subplot_titles=[f'Week {i+1}' for i in range(num_weeks)],
+    #     specs=[[{'type': 'domain'}] for _ in range(num_weeks)]
+    # )
+
+    # # Iterate over weekly weights and plot each week's weights
+    # for i, weights in enumerate(weekly_weights):
+    #     top_n_weights = get_top_n_weights(weights)
+    #     my_dict = {'Stocks': list(top_n_weights.keys()), 'Values': list(top_n_weights.values())}
+    #     fig.add_trace(go.Pie(labels=my_dict['Stocks'], values=my_dict['Values']), row=i+1, col=1)
+
+    # # Update layout
+    # fig.update_layout(title_text="Weekly Portfolio Weights", height=300*num_weeks)
+    # st.plotly_chart(fig, use_container_width=True)
+
+
+
+
+
+
+
+
+    # # Plot weights
+    # result = st.session_state['result']
+    # weights = result['final_weights']
+    # weights = {k:v for k,v in weights.items() if abs(v) > WEIGHT_TOLERANCE}
+    # if len(weights) > MAX_WEIGHTS_TO_DISPLAY:
+    #     sorted_weights = dict(sorted(weights.items(), key=lambda item: abs(item[1]), reverse=True))
+    #     top_5_weights = dict(list(sorted_weights.items())[:MAX_WEIGHTS_TO_DISPLAY])
+    #     other_weight = sum(list(sorted_weights.values())[MAX_WEIGHTS_TO_DISPLAY:])
+    #     top_5_weights['Other'] = other_weight
+    # else:
+    #     top_5_weights = weights
+    # #my_dict = {'Stocks': weights.keys(), 'Values': weights.values()}
+    # my_dict = {'Stocks': top_5_weights.keys(), 'Values': top_5_weights.values()}
+    # fig = px.pie(my_dict, values='Values', names='Stocks', title='Portfolio Weights')
+    # st.plotly_chart(fig, use_container_width=True)
+
+    # st.session_state['top_5_weights'] = weights
 
 
 # Function to handle button click
@@ -131,11 +220,11 @@ if st.button("Inspect Stocks", on_click=inspect_stocks):
 
 # If the button has been pressed, display the selectbox
 if st.session_state.get('inspect_button_pressed', False):
-    top_5_weights = st.session_state['top_5_weights']
+    top_n_weights = st.session_state['top_n_weights']
     option = st.selectbox(
         "Which stock would you like to inspect?",
-        top_5_weights.keys(),
-        index=None,
+        top_n_weights.keys(),
+        index=0,
         placeholder="Select a stock...",
     )
     st.session_state['selected_stock'] = option
@@ -166,63 +255,3 @@ if 'selected_stock' in st.session_state:
         yaxis_title='Close Price'
     )
     st.plotly_chart(fig, use_container_width=True)
-
-
-
-# if st.button("Inspect Stocks", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
-#     top_5_weights = st.session_state['top_5_weights']
-#     option = st.selectbox(
-#     "Which stock would you like to inspect?",
-#     top_5_weights.keys(),
-#     index=None,
-#     placeholder="Select a stock...",
-#     )
-#     st.write("You selected:", option)
-
-    # request stock prices
-    # params = {
-    #     'as_of_date':as_of_date_str
-    # }
-    # end_point = 'all_close_prices'
-    # url = '/'.join([api_url, end_point])
-    # prices = requests.get(url, params)
-    # print(type(prices))
-
-    # prices = pd.read_csv('data/all_close_prices.csv')
-    # prices['timestamp'] = pd.to_datetime(prices['timestamp'])
-    # prices = prices.set_index('timestamp')
-
-    # print(prices)
-
-    # st.session_state['prices'] = prices
-
-    # # Plot stock prices
-    # stock_prices = prices[option]
-    # dates = prices.index
-
-    # fig = go.Figure()
-    # fig.add_trace(go.Scatter(x=dates, y=stock_prices, mode='lines', name=option))
-    # fig.update_layout(
-    #     title=f'Price of {option}',
-    #     xaxis_title='Date',
-    #     yaxis_title='Close Price'
-    # )
-    # st.plotly_chart(fig, use_container_width=True)
-
-
-
-
-
-    #st.dataframe(prices)
-
-
-
-
-
-
-    # my_dict = {'Stocks':weights.keys(), 'Values':weights.values()}
-    # fig = px.pie(my_dict, values='Values', names='Stocks')
-
-    # st.plotly_chart(fig, use_container_width=True)
-
-#if st.button("See Final Weights", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
