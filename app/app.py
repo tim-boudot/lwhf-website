@@ -1,25 +1,37 @@
 import streamlit as st
 from PIL import Image
+import base64
+from io import BytesIO
+
+# Function to encode image to base64
+def get_image_base64(image_path):
+    img = Image.open(image_path)
+    buffered = BytesIO()
+    img.save(buffered, format="JPEG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return img_str
 
 st.set_page_config(page_title="Welcome")
 
-
-page_bg_img = '''
-<style>
-. stApp {
-background-image: url("https://images.unsplash.com/photo-1542281286-9e0a16bb7366");
-background-size: cover;
-}
-</style>
-'''
-
-st.markdown(page_bg_img, unsafe_allow_html=True)
+#st.markdown('''# Le Wagon Hedge Fund''')
 
 
 st.markdown('''# Le Wagon Hedge Fund''')
 
+
 image = Image.open('images/LWHF.jpeg')
-st.image(image, caption='Sunrise by the mountains')
+#st.image(image, caption='Sunrise by the mountains', width=500)
+
+image_base64 = get_image_base64('images/LWHF.jpeg')
+st.markdown(
+    f"""
+    <div class="image-container">
+        <img src="data:image/jpeg;base64,{image_base64}" alt="Sunrise by the mountains" width="500">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 
 
