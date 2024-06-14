@@ -112,7 +112,7 @@ if selected_mu:
     display_formula(selected_mu, formulas_mu)
 
 selected_cov = st.selectbox(
-    "Which method would you like to use to find you expected returns?",
+    "Which method would you like to use to find you expected variance?",
     ['hist', 'ewma1', 'ewma2'],
     index=None,
     placeholder="Method to find cov...",

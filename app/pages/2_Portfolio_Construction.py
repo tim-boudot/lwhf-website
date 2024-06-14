@@ -12,7 +12,7 @@ current_url = ('https://lwhf7-edxf3vliba-ew.a.run.app/current_portfolio')
 api_cache_folder = 'api_cache_7'
 
 
-st.markdown('''# Let's construct a money-making guaranteed 100% becoming rich in 1 week portfolio''')
+st.markdown('''# Want a money-making portfolio to invest today?''')
 
 options = st.multiselect(
     "Which asset classes would you like to include in your portfolio",
