@@ -71,34 +71,39 @@ st.write("You selected:", selected_date)
 num_periods = st.number_input("Please select the number of backtesting periods", min_value=0, max_value=100, value=DEFAULT_NUM_PERIODS, step=1)
 st.write("You selected:", num_periods)
 
-if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
 
+if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
     end_point = 'backtest'
     params = {
         'as_of_date':as_of_date_str,
         'n_periods':num_periods
     }
 
-
     full_path = os.path.join(api_cache_folder, end_point)
     if not os.path.exists(full_path):
         os.makedirs(full_path)
     filename = f'{as_of_date_str}-{num_periods}.json'
     json_full_path = os.path.join(full_path, filename)
+
     if os.path.exists(json_full_path):
-        print(f'✅ Found {filename} in the local cache.')
+        st.info("Pre-trained model found. Model predicting...")
+        progress_bar = st.progress(0)
+        for percent_complete in range(100):
+            time.sleep(0.01)  # Adjust the sleep time to make the progress bar fill up in 3 seconds
+            progress_bar.progress(percent_complete + 1)
+
         # read the json file as a dictionary
         with open(json_full_path, 'r') as file:
             result = json.load(file)
     else:
+        st.warning("Model training will take approximately 3 minutes. Please wait...")
         url = '/'.join([api_url, end_point])
         req = requests.get(url, params)
         result = req.json()
-    with open(json_full_path, 'w') as f:
-        json.dump(result, f)
+        with open(json_full_path, 'w') as f:
+            json.dump(result, f)
 
     st.session_state['result'] = result
-
 
     ## Plot Portfolio returns vs Market returns
     portfolio_returns = result['portfolio_returns']
@@ -112,13 +117,12 @@ if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=No
 
     as_of = datetime.datetime.strptime(as_of_date_str, '%Y-%m-%d').date()
     dates = [as_of]
-    for i in range(1,num_periods):
-        dates.append(as_of - datetime.timedelta(days= 7*i))
+    for i in range(1, num_periods):
+        dates.append(as_of - datetime.timedelta(days=7 * i))
     dates = dates[::-1]
 
-    df = pd.DataFrame({'Date':dates, 'Portfolio Returns':cumulative_portfolio_returns, 'Market Returns':cumulative_market_returns})
+    df = pd.DataFrame({'Date': dates, 'Portfolio Returns': cumulative_portfolio_returns, 'Market Returns': cumulative_market_returns})
     df = df.set_index('Date')
-
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=dates, y=cumulative_portfolio_returns, mode='lines', name='Portfolio Returns'))
@@ -129,6 +133,66 @@ if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=No
         yaxis_title='Returns'
     )
     st.plotly_chart(fig, use_container_width=True)
+
+
+# if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
+
+#     end_point = 'backtest'
+#     params = {
+#         'as_of_date':as_of_date_str,
+#         'n_periods':num_periods
+#     }
+
+
+#     full_path = os.path.join(api_cache_folder, end_point)
+#     if not os.path.exists(full_path):
+#         os.makedirs(full_path)
+#     filename = f'{as_of_date_str}-{num_periods}.json'
+#     json_full_path = os.path.join(full_path, filename)
+#     if os.path.exists(json_full_path):
+#         print(f'✅ Found {filename} in the local cache.')
+#         # read the json file as a dictionary
+#         with open(json_full_path, 'r') as file:
+#             result = json.load(file)
+#     else:
+#         url = '/'.join([api_url, end_point])
+#         req = requests.get(url, params)
+#         result = req.json()
+#     with open(json_full_path, 'w') as f:
+#         json.dump(result, f)
+
+#     st.session_state['result'] = result
+
+
+#     ## Plot Portfolio returns vs Market returns
+#     portfolio_returns = result['portfolio_returns']
+#     market_returns = result['market_returns']
+
+#     cumulative_portfolio_returns = [0]
+#     cumulative_market_returns = [0]
+#     for i in range(1, len(portfolio_returns)):
+#         cumulative_portfolio_returns.append(get_total_return(portfolio_returns[:i]))
+#         cumulative_market_returns.append(get_total_return(market_returns[:i]))
+
+#     as_of = datetime.datetime.strptime(as_of_date_str, '%Y-%m-%d').date()
+#     dates = [as_of]
+#     for i in range(1,num_periods):
+#         dates.append(as_of - datetime.timedelta(days= 7*i))
+#     dates = dates[::-1]
+
+#     df = pd.DataFrame({'Date':dates, 'Portfolio Returns':cumulative_portfolio_returns, 'Market Returns':cumulative_market_returns})
+#     df = df.set_index('Date')
+
+
+#     fig = go.Figure()
+#     fig.add_trace(go.Scatter(x=dates, y=cumulative_portfolio_returns, mode='lines', name='Portfolio Returns'))
+#     fig.add_trace(go.Scatter(x=dates, y=cumulative_market_returns, mode='lines', name='Market Returns'))
+#     fig.update_layout(
+#         title='Portfolio vs Market Returns',
+#         xaxis_title='Date',
+#         yaxis_title='Returns'
+#     )
+#     st.plotly_chart(fig, use_container_width=True)
 
 
 if st.button("See Final Weights", key=None, help=None, on_click=None, args=None, kwargs=None, type="secondary", disabled=False, use_container_width=False):
