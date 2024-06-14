@@ -7,3 +7,5 @@ cvxpy
 riskfolio-lib
 matplotlib==3.7.0
 stqdm
+yfinance
+time
