@@ -119,7 +119,7 @@ if st.button("See Backtest Returns", key=None, help=None, on_click=None, args=No
         else:
             st.warning("Model training will take approximately 3 minutes. Please wait...")
             st.write("Downloading data...")
-            st.sleep(2)
+            time.sleep(2)
             st.write("Training model...")
             url = '/'.join([api_url, end_point])
             req = requests.get(url, params)
